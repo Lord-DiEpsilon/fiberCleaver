@@ -1,0 +1,17 @@
+# Carpetas de compilación
+build/
+cmake-build-*/
+
+# Archivos de configuración locales
+sdkconfig
+sdkconfig.old
+*.log
+
+# VSCode settings
+.vscode/
+.devcontainer/
+
+# Archivos temporales
+*.swp
+*.swo
+*~
