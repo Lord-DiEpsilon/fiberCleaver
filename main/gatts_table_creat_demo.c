@@ -126,13 +126,13 @@ void task_calibrar(void *arg) {
     vTaskDelete(NULL);
 }
 
-
 void task_ejecutar_corte(void *arg) {
     ESP_LOGI(TAG, "Ejecutando movimiento por ejCut...");
 
     mover_motor_por_mm(&motor_estirado, (float)estDist, pasosContadosEst*8, 18.0f, false, 500,false);
     vTaskDelay(pdMS_TO_TICKS(200));
     mover_motor_por_mm(&motor_corte, (float)cutDist, pasosContadosCort*16, 2.5f, true, 500,false);
+    
 
     ejCut = 0;
     esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_EJ_CUT], sizeof(uint8_t), &ejCut);
@@ -146,8 +146,6 @@ void task_ejecutar_corte(void *arg) {
 
 void task_devolver_a_inicio(void *arg) {
     ESP_LOGI(TAG, "Ejecutando devolver_a_inicio...");
-
-    
 
     devolver_a_inicio(&motor_estirado, (float)estDist, pasosContadosEst * 8, 18.0f,
                   &motor_corte, (float)cutDist - 0.1f, pasosContadosCort * 16, 2.5f,
@@ -164,7 +162,6 @@ void task_devolver_a_inicio(void *arg) {
     vTaskDelete(NULL);
 }
 
-
 void task_ejecutar_rutina_avanzada(void *arg) {
     ESP_LOGI(TAG, "Ejecutando rutina avanzada...");
 
@@ -175,11 +172,13 @@ void task_ejecutar_rutina_avanzada(void *arg) {
     float mm_corte = 2.5f; // según calibración del motor de corte
 
     // Ejecutar rutina avanzada
-    ejecutar_rutina_AV(
+    ejecutar_rutina_estiramiento_y_corte(
         &motor_estirado, pasos_est, mm_est, (float)estDist,   // estiramiento mm deseado
         &motor_corte, pasos_corte, mm_corte, (float)cutDist   // corte mm deseado
     );
     regresar_motor_corte(&motor_corte, pasosContadosCort, mm_corte, cutDist);
+
+    estDist += 1.5f;
 
     ejCut = 0;
     esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_EJ_CUT], sizeof(uint8_t), &ejCut);
@@ -191,7 +190,6 @@ void task_ejecutar_rutina_avanzada(void *arg) {
 
     vTaskDelete(NULL);
 }
-
 
 static void start_advertising(void) {
     esp_ble_adv_data_t adv_data = {
@@ -323,7 +321,6 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] = {
       ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, sizeof(uint16_t), sizeof(uint16_t), (uint8_t[]){0x00, 0x00}}}
 };
 
-
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
     switch (event) {
         case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
@@ -439,9 +436,6 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         esp_ble_gatts_create_attr_tab(gatt_db, global_gatts_if, HRS_IDX_NB, 0);
     }
 }
-
-
-
 
 void app_main(void) {
     esp_err_t ret;

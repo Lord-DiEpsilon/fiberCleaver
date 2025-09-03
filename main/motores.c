@@ -282,11 +282,16 @@ void ejecutar_rutina_estiramiento_y_corte(
             vTaskDelay(pdMS_TO_TICKS(50));
         }
     }
+    
+    configurar_microstepping(M1_PIN, M2_PIN, 8);
+    mover_motor_por_mm(motor_est, 1.5f, pasos_est * 8, mm_est, false, 250, false);
+    
 
     strcpy(status, "Ready");
     ejCut = 0;
     ESP_LOGI("RUTINA", "Rutina especial completada");
 }
+
 void regresar_motor_corte(stepper_motor_t *motor_corte, int pasos_corte, float mm_corte, float mm_corte_total) {
     if (mm_corte_total <= 0.0f) return;
 
@@ -327,7 +332,6 @@ void motor_task(void *pvParameters) {
     free(params);
     vTaskDelete(NULL);
 }
-
 
 void ejecutar_rutina_AV(
    stepper_motor_t *motor_est, int pasos_est, float mm_est, float mm_estirar,
