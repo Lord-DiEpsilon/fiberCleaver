@@ -13,8 +13,7 @@
 #include <string.h>
 #include "esp_bt_device.h"
 #include "motores.h"
-
-
+#include <math.h>   // importante para fabsf()
 
 #define TAG "CORTADORA"
 #define DEVICE_NAME "Cortadora"
@@ -25,6 +24,7 @@
 #define CHAR_UUID_CUT_DIST    0xC403
 #define CHAR_UUID_EJ_CUT      0xC404
 #define CHAR_UUID_STATUS      0xC405
+#define CHAR_UUID_MOV        0xC407
 
 #define M1_PIN GPIO_NUM_37
 #define M2_PIN GPIO_NUM_38
@@ -58,17 +58,24 @@ enum {
     IDX_VAL_STATUS,
     IDX_CFG_STATUS,
 
-    IDX_CHAR_INIT,       // Nueva característica
+    IDX_CHAR_INIT,       
     IDX_VAL_INIT,
     IDX_CFG_INIT,
 
-    HRS_IDX_NB           // Total de entradas
+    IDX_CHAR_MOV,       
+    IDX_VAL_MOV,
+    IDX_CFG_MOV,
+
+    HRS_IDX_NB           
 };
 
 
 uint8_t calibrado = 0;
-float estDist = 0.0f;
-float cutDist = 0.0f;
+uint8_t mov = 0;          // modo de movimiento
+float estDist = 0.0f;       // distancia en mm a estirar
+float cutDist = 0.0f;       // distancia en mm a cortar
+float estDist_Antes = 0.0f;      // distancia en mm a estirar Anterior
+float cutDist_Antes = 0.0f;      // distancia en mm a cortar Anterior
 
 uint8_t ejCut = 0;
 uint32_t Init = 0;
@@ -189,6 +196,60 @@ void task_ejecutar_rutina_avanzada(void *arg) {
     esp_ble_gatts_send_indicate(global_gatts_if, global_conn_id, attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status, false);
 
     vTaskDelete(NULL);
+}
+
+void task_selecUbicacionEsti(void *arg) {
+
+    ESP_LOGI(TAG, "Ejecutando selecUbicacion...");
+
+    configurar_microstepping(M1_PIN, M2_PIN, 8);
+
+    if(estDist > estDist_Antes){
+        mover_motor_por_mm(&motor_estirado, (float)(estDist-estDist_Antes), pasosContadosEst*8, 18.0f, false, 500,false);
+    } else if (estDist < estDist_Antes){
+        mover_motor_por_mm(&motor_estirado, (float)(estDist_Antes-estDist), pasosContadosEst*8, 18.0f, true, 500,false);
+    }else {
+        ESP_LOGI(TAG, "No hay cambio en estDist, no se mueve el motor.");
+    }
+
+    estDist_Antes = estDist;
+
+    mov = 0;
+    esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_MOV], sizeof(uint8_t), &mov);
+    ESP_LOGI(TAG, "Rutina finalizada. mov reiniciado a 0");
+
+    strcpy(status, "Ready");
+    esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status);
+    esp_ble_gatts_send_indicate(global_gatts_if, global_conn_id, attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status, false);
+
+    vTaskDelete(NULL);    
+}
+
+void task_selecUbicacionCut(void *arg) {
+
+    ESP_LOGI(TAG, "Ejecutando selecUbicacion...");
+
+    configurar_microstepping(M1_PIN, M2_PIN, 16);
+
+    if(cutDist > cutDist_Antes){
+        mover_motor_por_mm(&motor_corte, (float)(cutDist-cutDist_Antes), pasosContadosCort*16, 2.5f, true, 500,false);
+    } else if (cutDist < cutDist_Antes){
+        mover_motor_por_mm(&motor_corte, (float)(cutDist_Antes-cutDist), pasosContadosCort*16, 2.5f, false, 500,false);
+    } else {
+        ESP_LOGI(TAG, "No hay cambio en cutDist, no se mueve el motor.");
+    }
+
+    cutDist_Antes = cutDist;
+
+    mov = 0;
+    esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_MOV], sizeof(uint8_t), &mov);
+    ESP_LOGI(TAG, "Rutina finalizada. mov reiniciado a 0");
+
+    strcpy(status, "Ready");
+    esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status);
+    esp_ble_gatts_send_indicate(global_gatts_if, global_conn_id, attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status, false);
+
+    vTaskDelete(NULL);    
 }
 
 static void start_advertising(void) {
@@ -319,6 +380,20 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] = {
     [IDX_CFG_INIT] =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid,
       ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, sizeof(uint16_t), sizeof(uint16_t), (uint8_t[]){0x00, 0x00}}}
+
+    // MOV  
+    ,[IDX_CHAR_MOV] =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid,
+      ESP_GATT_PERM_READ, CHAR_DECLARATION_SIZE, CHAR_DECLARATION_SIZE,
+      (uint8_t[]){ESP_GATT_CHAR_PROP_BIT_READ | ESP_GATT_CHAR_PROP_BIT_WRITE | ESP_GATT_CHAR_PROP_BIT_NOTIFY}}},
+
+    [IDX_VAL_MOV] =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t[]){0x07, 0xC4},
+      ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, sizeof(uint8_t), sizeof(uint8_t), &mov}},
+    
+    [IDX_CFG_MOV] =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_client_config_uuid,
+      ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE, sizeof(uint16_t), sizeof(uint16_t), (uint8_t[]){0x00, 0x00}}}
 };
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param) {
@@ -365,7 +440,27 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
                 xTaskCreate(task_calibrar, "calib_task", 4096, NULL, 5, NULL);
             }
 
-        } else if (param->write.handle == attr_handle_table[IDX_VAL_EST_DIST]) {
+        } else if (param->write.handle == attr_handle_table[IDX_VAL_MOV]) {
+            mov = param->write.value[0];
+            ESP_LOGI(TAG, "Se recibió mov: %d", mov);
+
+            if (mov == 1) {
+                strcpy(status, "Busy");
+                esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status);
+                esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status, false);
+
+                xTaskCreate(task_selecUbicacionEsti, "mov_task", 4096, NULL, 5, NULL);
+
+            } else if (mov == 2) {
+                strcpy(status, "Busy");
+                esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status);
+                esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status, false);
+
+                xTaskCreate(task_selecUbicacionCut, "mov_task", 4096, NULL, 5, NULL);
+            }
+        }
+        
+        else if (param->write.handle == attr_handle_table[IDX_VAL_EST_DIST]) {
             memcpy(&estDist, param->write.value, sizeof(float));
             ESP_LOGI(TAG, "estDist actualizado a: %.2f mm", estDist);
 

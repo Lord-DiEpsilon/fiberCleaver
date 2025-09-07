@@ -94,6 +94,10 @@ int calibrar_motor(stepper_motor_t *motor, gpio_num_t endstop_pin, uint32_t dela
         gpio_set_level(motor->step_pin, 0);
         ets_delay_us(delay_us);
         pasos++;
+
+        if (pasos % 1000 == 0) {
+            vTaskDelay(1);
+        }
     }
 
     vTaskDelay(pdMS_TO_TICKS(200));
@@ -104,6 +108,10 @@ int calibrar_motor(stepper_motor_t *motor, gpio_num_t endstop_pin, uint32_t dela
         ets_delay_us(delay_us);
         gpio_set_level(motor->step_pin, 0);
         ets_delay_us(delay_us);
+
+        if (i % 1000 == 0) {
+            vTaskDelay(1);
+        }
     }
 
     deshabilitar_motor(motor);
@@ -308,83 +316,3 @@ void regresar_motor_corte(stepper_motor_t *motor_corte, int pasos_corte, float m
 
     vTaskDelay(pdMS_TO_TICKS(200));
 }
-
-void motor_task(void *pvParameters) {
-    motor_task_params_t *params = (motor_task_params_t *)pvParameters;
-
-    configurar_microstepping(M1_PIN, M2_PIN, params->microsteps);
-
-    mover_motor_por_mm(params->motor,
-                       params->mm_total,
-                       params->pasos * params->microsteps,
-                       params->mm,
-                       params->sentido,
-                       params->delay_us,
-                       false);
-
-    // Señalar que terminó según el tipo
-    if (params->tipo == MOTOR_ESTIRAMIENTO) {
-        xEventGroupSetBits(motor_event_group, EST_TERMINADO);
-    } else {
-        xEventGroupSetBits(motor_event_group, CORTE_TERMINADO);
-    }
-
-    free(params);
-    vTaskDelete(NULL);
-}
-
-void ejecutar_rutina_AV(
-   stepper_motor_t *motor_est, int pasos_est, float mm_est, float mm_estirar,
-    stepper_motor_t *motor_corte, int pasos_corte, float mm_corte, float mm_corte_total) {
-
-    strcpy(status, "Busy");
-
-    // Crear EventGroup
-    motor_event_group = xEventGroupCreate();
-
-    // === Parámetros motor de estiramiento ===
-    motor_task_params_t *params_est = malloc(sizeof(motor_task_params_t));
-    params_est->motor = motor_est;
-    params_est->pasos = pasos_est;
-    params_est->mm = mm_est;
-    params_est->mm_total = mm_estirar;
-    params_est->microsteps = 8;
-    params_est->delay_us = 500;
-    params_est->sentido = false;
-
-    // === Parámetros motor de corte ===
-    motor_task_params_t *params_corte = NULL;
-    if (mm_corte_total > 0.0f) {
-        params_corte = malloc(sizeof(motor_task_params_t));
-        params_corte->motor = motor_corte;
-        params_corte->pasos = pasos_corte;
-        params_corte->mm = mm_corte;
-        params_corte->mm_total = mm_corte_total;
-        params_corte->microsteps = 16;
-        params_corte->delay_us = 500;
-        params_corte->sentido = true;
-    }
-
-    // Crear tareas
-    xTaskCreatePinnedToCore(motor_task, "motor_est", 4096, params_est, 5, NULL, 1);
-
-    if (params_corte) {
-        xTaskCreatePinnedToCore(motor_task, "motor_corte", 4096, params_corte, 5, NULL, 1);
-    }
-
-    // Esperar a que ambas tareas terminen
-    EventBits_t bits_esperados = EST_TERMINADO | (params_corte ? CORTE_TERMINADO : 0);
-    xEventGroupWaitBits(motor_event_group,
-                        bits_esperados,
-                        pdTRUE,    // Limpiar bits al salir
-                        pdTRUE,    // Esperar todos los bits
-                        portMAX_DELAY);
-
-    // Limpieza
-    vEventGroupDelete(motor_event_group);
-
-    strcpy(status, "Ready");
-    ejCut = 0;
-    ESP_LOGI("RUTINA", "Rutina especial completada");
-}
-
