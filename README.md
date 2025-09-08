@@ -1,49 +1,41 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
+| Chips Soportados | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C6 | ESP32-H2 | ESP32-S3 |
 | ----------------- | ----- | -------- | -------- | -------- | -------- | -------- |
 
-# ESP-IDF Gatt Server Service Table Example
+# Programa para el control del cortados de fibras
 
-This example shows how to create a GATT service with an attribute table defined in one place. Provided API releases the user from adding attributes one by one as implemented in BLUEDROID. A demo of the other method to create the attribute table is presented in [gatt_server_demo](../gatt_server).
+Este programa permite que la placa personalizada sabertooth ESP32 S3, controle dos motores a pasos, correspondiendo uno al corte y otro al estiramiento respectivamente.
 
-Please, check this [tutorial](tutorial/Gatt_Server_Service_Table_Example_Walkthrough.md) for more information about this example.
+El programa está diseñado para utilizar los dos núcleos del ESP32, uno encargado de correr las tareas del BLE, establecer conexiones, enviar-recibir características, etc. Mientras que el otro núcleo se encarga de operar los motores a paso, mediante dos drivers TCM2209 además de detectar finales de carrera para calcular la distancia y como medida de seguridad.
 
-## How to Use Example
+A continuación, se presenta informacion importante del programa, además es posible verificar el manual [aquí.](tutorial/Gatt_Server_Service_Table_Example_Walkthrough.md)
 
-Before project configuration and build, be sure to set the correct chip target using:
+### Hardware Permitido
 
-```bash
-idf.py set-target <chip_name>
+* La opcion recomendable para implementar el sistema es en la plataforma de desarrollo Sabertooth ESP32 S3, el cual esta a disposicion de IEEE photonics, pero si se requiriera la instalacion en otra plataforma, este programa es compatible con chips: ESP32 S3, C3, C2, C6, H2.
+
+![Plataforma de desarrollo Sabertooth ESP32 S3](misc/PCB.png)
+
+## Archivos
+
+Para lograr actualizar o anadir mas funcionalidades al sistema se debe de editar el archivo principal:
+
+```
+\main\gatts_table_creat_demo.c
 ```
 
-### Hardware Required
-
-* A development board with ESP32/ESP32-C3/ESP32-H2/ESP32-C2/ESP32-S3 SoC (e.g., ESP32-DevKitC, ESP-WROVER-KIT, etc.)
-* A USB cable for Power supply and programming
-
-See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
-
-### Build and Flash
+Mientras que para anadir funciones de impplementacion, puede editar el archivo c y de cabeceras:
+```
+main/motores.c
+main/motores.h
+```
+<!-- ### Build and Flash
 
 Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
-
-## Example Output
-
-```
-I (0) cpu_start: Starting scheduler on APP CPU.
-I (512) BTDM_INIT: BT controller compile version [1342a48]
-I (522) system_api: Base MAC address is not set
-I (522) system_api: read default base MAC address from EFUSE
-I (522) phy_init: phy_version 4670,719f9f6,Feb 18 2021,17:07:07
-I (942) GATTS_TABLE_DEMO: create attribute table successfully, the number handle = 8
-
-I (942) GATTS_TABLE_DEMO: SERVICE_START_EVT, status 0, service_handle 40
-I (962) GATTS_TABLE_DEMO: advertising start successfully
-```
+See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects. -->
 
 ## Troubleshooting
 
-For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+Para cualquir consulta o sugerencia, puede contactarse mediante el correo institucional a.orozco.ramirez@ugto.mx

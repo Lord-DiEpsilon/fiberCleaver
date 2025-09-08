@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/CMakeFiles/bootloader"
+		},
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/CMakeFiles/bootloader.rule"
+		},
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/CMakeFiles/bootloader-complete.rule"
+		},
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule"
+		},
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule"
+		},
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule"
+		},
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule"
+		},
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule"
+		},
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule"
+		},
+		{
+			"file" : "/home/Alejandro/Documentos/8voSEM/Sabertooth/BLE-TEST/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"bootloader"
+		],
+		"name" : "bootloader"
+	}
+}
