@@ -20,7 +20,7 @@ A continuación, se presenta informacion importante del programa, además es pos
 Para lograr actualizar o anadir mas funcionalidades al sistema se debe de editar el archivo principal:
 
 ```
-\main\gatts_table_creat_demo.c
+\main\main.c
 ```
 
 Mientras que para anadir funciones de impplementacion, puede editar el archivo c y de cabeceras:

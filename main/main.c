@@ -26,6 +26,8 @@
 #define CHAR_UUID_STATUS      0xC405
 #define CHAR_UUID_MOV        0xC407
 
+#define LIMIT_SWITCH GPIO_NUM_16
+
 #define M1_PIN GPIO_NUM_37
 #define M2_PIN GPIO_NUM_38
 // #define HRS_IDX_NB 20
@@ -69,8 +71,7 @@ enum {
     HRS_IDX_NB           
 };
 
-
-uint8_t calibrado = 0;
+volatile uint8_t calibrado = 0;
 uint8_t mov = 0;          // modo de movimiento
 float estDist = 0.0f;       // distancia en mm a estirar
 float cutDist = 0.0f;       // distancia en mm a cortar
@@ -105,7 +106,27 @@ stepper_motor_t motor_corte = {
     .invert_dir = false
 };
 
-// #include "esp_bt_device.h"
+void IRAM_ATTR limit_isr_handler(void* arg) {
+    if (calibrado) {
+        deshabilitar_motor(&motor_estirado);
+        estDist_Antes = 0.0f;
+        ESP_EARLY_LOGW("ISR", "¡Switch activado, deteniendo motor!");
+    }
+}
+
+void init_switch() {
+    gpio_config_t io_conf = {
+        .intr_type = GPIO_INTR_NEGEDGE, 
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = (1ULL<<LIMIT_SWITCH),
+        .pull_up_en = 1,   
+        .pull_down_en = 0,
+    };
+    gpio_config(&io_conf);
+
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(LIMIT_SWITCH, limit_isr_handler, NULL);
+}
 
 void print_ble_mac() {
     const uint8_t* mac = esp_bt_dev_get_address();
@@ -118,17 +139,21 @@ void print_ble_mac() {
 }
 
 void task_calibrar(void *arg) {
+
+    gpio_intr_disable(LIMIT_SWITCH);
     configurar_microstepping(M1_PIN, M2_PIN, 8);  // fijamos resolución explícita
-    int pasos_micro = calibrar_motor(&motor_estirado, GPIO_NUM_16, 500);
+    int pasos_micro = calibrar_motor(&motor_estirado, LIMIT_SWITCH, 500);
     pasosContadosEst = pasos_micro /8;
 
     configurar_microstepping(M1_PIN, M2_PIN, 16);
-    pasos_micro = calibrar_motor(&motor_corte, GPIO_NUM_16, 500);
+    pasos_micro = calibrar_motor(&motor_corte, LIMIT_SWITCH, 500);
     pasosContadosCort = pasos_micro / 16;
 
     strcpy(status, "Ready");
     esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status);
     esp_ble_gatts_send_indicate(global_gatts_if, global_conn_id, attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status, false);
+
+    gpio_intr_enable(LIMIT_SWITCH);
 
     vTaskDelete(NULL);
 }
@@ -566,4 +591,6 @@ void app_main(void) {
     
     // Configurar MTU
     ESP_ERROR_CHECK(esp_ble_gatt_set_local_mtu(500));
+    
+    init_switch();
 }
