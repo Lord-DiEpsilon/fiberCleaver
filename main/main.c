@@ -36,7 +36,6 @@ static esp_gatt_if_t global_gatts_if = 0;
 // extern uint8_t calibrado;
 // extern char status[16];
 
-
 enum {
     IDX_SVC,
 
@@ -109,7 +108,14 @@ stepper_motor_t motor_corte = {
 void IRAM_ATTR limit_isr_handler(void* arg) {
     if (calibrado) {
         deshabilitar_motor(&motor_estirado);
+        // estDist_Antes = 0.0f;
+        calibrado = 0;
+        estDist = 0.0f;
         estDist_Antes = 0.0f;
+
+        esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_EST_DIST], sizeof(estDist), &estDist);
+        esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_CALIBRADO], sizeof(calibrado), &calibrado);
+
         ESP_EARLY_LOGW("ISR", "¡Switch activado, deteniendo motor!");
     }
 }
@@ -469,6 +475,12 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
             mov = param->write.value[0];
             ESP_LOGI(TAG, "Se recibió mov: %d", mov);
 
+            if(calibrado == 0){
+                ESP_LOGW(TAG, "El sistema no está calibrado. Ignorando comando de movimiento.");
+                mov = 0;
+                esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_MOV], sizeof(uint8_t), &mov);
+                return;
+            }
             if (mov == 1) {
                 strcpy(status, "Busy");
                 esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status);
