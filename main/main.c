@@ -116,7 +116,7 @@ void IRAM_ATTR limit_isr_handler(void* arg) {
     uint32_t now = xTaskGetTickCountFromISR();
 
     // Ignorar pulsos muy rápidos (<3 ms)
-    if ((now - last_isr_tick) > pdMS_TO_TICKS(3)) {
+    if ((now - last_isr_tick) > pdMS_TO_TICKS(5)) {
         if (task_handle_limit != NULL) { // protección adicional
             vTaskNotifyGiveFromISR(task_handle_limit, &xHigherPriorityTaskWoken);
             portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
@@ -494,9 +494,12 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 
 static void print_task(void *arg) {
     while (1) {
-        ESP_LOGI(TAG, "Calibrado: %i, estDist: %f, cutDist: %f, ejCut: %i, Init: %lu, status: %s", calibrado, estDist, cutDist, ejCut, Init, status);
+        // Separar en varios logs para reducir uso de stack
+        ESP_LOGI(TAG, "Calibrado: %d", calibrado);
+        ESP_LOGI(TAG, "estDist: %.2f mm, cutDist: %.2f mm", (double)estDist, (double)cutDist);
+        ESP_LOGI(TAG, "ejCut: %d, Init: %lu, status: %s", ejCut, Init, status);
+
         vTaskDelay(pdMS_TO_TICKS(1000));
-        
     }
 }
 
@@ -595,7 +598,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
                 memcpy(attr_handle_table, param->add_attr_tab.handles, sizeof(attr_handle_table));
                 esp_ble_gatts_start_service(attr_handle_table[IDX_SVC]);
                 print_ble_mac();
-                xTaskCreate(print_task, "print_task", 2048, NULL, 5, NULL);
+                xTaskCreate(print_task, "print_task", 4096, NULL, 5, NULL);
                 start_advertising();
 
                 init_stepper_motor(&motor_estirado);
