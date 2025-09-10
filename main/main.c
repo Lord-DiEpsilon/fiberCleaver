@@ -105,31 +105,71 @@ stepper_motor_t motor_corte = {
     .invert_dir = false
 };
 
+// ===== Variables globales =====
+static volatile bool limit_flag = false;
+static volatile uint32_t last_isr_tick = 0;
+TaskHandle_t task_handle_limit = NULL;
+
+// ===== ISR ligera =====
 void IRAM_ATTR limit_isr_handler(void* arg) {
-    if (calibrado) {
-        deshabilitar_motor(&motor_estirado);
-        // estDist_Antes = 0.0f;
-        calibrado = 0;
-        estDist = 0.0f;
-        estDist_Antes = 0.0f;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    uint32_t now = xTaskGetTickCountFromISR();
 
-        esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_EST_DIST], sizeof(estDist), &estDist);
-        esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_CALIBRADO], sizeof(calibrado), &calibrado);
+    // Ignorar pulsos muy rápidos (<3 ms)
+    if ((now - last_isr_tick) > pdMS_TO_TICKS(3)) {
+        if (task_handle_limit != NULL) { // protección adicional
+            vTaskNotifyGiveFromISR(task_handle_limit, &xHigherPriorityTaskWoken);
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
+    }
 
-        ESP_EARLY_LOGW("ISR", "¡Switch activado, deteniendo motor!");
+    last_isr_tick = now;
+}
+
+// ===== Tarea para procesar el evento =====
+void task_limit_handler(void *pvParameters) {
+    for (;;) {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // espera hasta que el ISR notifique
+
+        vTaskDelay(pdMS_TO_TICKS(5)); // anti-rebote
+        int nivel = gpio_get_level(LIMIT_SWITCH);
+        if (nivel == 0 && calibrado) {
+            deshabilitar_motor(&motor_estirado);
+            calibrado = 0;
+            estDist = 0.0f;
+            estDist_Antes = 0.0f;
+
+            esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_EST_DIST], sizeof(estDist), &estDist);
+            esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_CALIBRADO], sizeof(calibrado), &calibrado);
+
+            ESP_LOGW("LIMIT", "¡Switch activado, deteniendo motor!");
+        }
     }
 }
 
+// ===== Configuración del switch =====
 void init_switch() {
+    // Crear la tarea primero
+    xTaskCreate(
+        task_limit_handler,   // función de la tarea
+        "task_limit",         // nombre
+        3072,                 // stack
+        NULL,                 // parámetros
+        5,                    // prioridad razonable
+        &task_handle_limit    // handle
+    );
+
+    // Configurar el GPIO
     gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_NEGEDGE, 
+        .intr_type = GPIO_INTR_NEGEDGE,
         .mode = GPIO_MODE_INPUT,
-        .pin_bit_mask = (1ULL<<LIMIT_SWITCH),
-        .pull_up_en = 1,   
+        .pin_bit_mask = (1ULL << LIMIT_SWITCH),
+        .pull_up_en = 1,
         .pull_down_en = 0,
     };
     gpio_config(&io_conf);
 
+    // 3️⃣ Instalar ISR
     gpio_install_isr_service(0);
     gpio_isr_handler_add(LIMIT_SWITCH, limit_isr_handler, NULL);
 }
@@ -209,6 +249,10 @@ void task_ejecutar_rutina_avanzada(void *arg) {
     float mm_est = 18.0f;  // según calibración del motor de estiramiento
     float mm_corte = 2.5f; // según calibración del motor de corte
 
+    if(estDist > 14.0f){
+        ESP_LOGW(TAG, "estDist excede el máximo para esta rutina. Ajustado a 14.0 mm por seguridad");
+        estDist = 14.0f;
+    }
     // Ejecutar rutina avanzada
     ejecutar_rutina_estiramiento_y_corte(
         &motor_estirado, pasos_est, mm_est, (float)estDist,   // estiramiento mm deseado
@@ -499,10 +543,18 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         
         else if (param->write.handle == attr_handle_table[IDX_VAL_EST_DIST]) {
             memcpy(&estDist, param->write.value, sizeof(float));
+            if(estDist > 16.0f){
+                estDist = 16.0f;
+                ESP_LOGI(TAG, "estDist excede el máximo. Ajustado a 16.0 mm");
+            }
             ESP_LOGI(TAG, "estDist actualizado a: %.2f mm", estDist);
 
         } else if (param->write.handle == attr_handle_table[IDX_VAL_CUT_DIST]) {
             memcpy(&cutDist, param->write.value, sizeof(float));
+            if(cutDist > 12.0f){
+                cutDist = 12.0f;
+                ESP_LOGI(TAG, "cutDist excede el máximo. Ajustado a 12.0 mm");
+            }
             ESP_LOGI(TAG, "cutDist actualizado a: %.2f mm", cutDist);
 
         } else if (param->write.handle == attr_handle_table[IDX_VAL_EJ_CUT]) {
@@ -522,7 +574,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
             memcpy(&Init, param->write.value, sizeof(uint32_t));
             ESP_LOGI(TAG, "Init actualizado a: %lu", Init);
 
-            if (Init == 1) {
+            if (Init == 1 && calibrado == 1) {
                 strcpy(status, "Busy");
                 esp_ble_gatts_set_attr_value(attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status);
                 esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, attr_handle_table[IDX_VAL_STATUS], strlen(status), (uint8_t *)status, false);
