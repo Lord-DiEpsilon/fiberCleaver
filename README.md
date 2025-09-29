@@ -71,7 +71,7 @@ Pese a que la aplicacion de control delimita la distancias de corte y estiramien
 
 Si la navaja de corte chocara con el cilindro de corte, es necesario que mediante la aplicacion se devuelva a su estado inicial o cero, posteriromente, se debe de mover manualmente a su posicion inicial de 8.6 mm, como se explica en la seccion de "Estado inicial".
 
-### Movil de estiramiento
+### Movil de estiramiento llega al final
 
 Si por alguna razon el movil de estiramiento llegara al limite, por cualquier situacion, el sistema se parara en cuanto llegue al tope, en esta situacion se debe de mover a la posicion inicial del movil de estirmaiento manualmente, posteriormente se debera de recalibrar el sistema.
 
