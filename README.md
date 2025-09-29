@@ -11,7 +11,7 @@ A continuación, se presenta informacion importante del programa, además es pos
 
 ### Hardware Permitido
 
-* La opcion recomendable para implementar el sistema es en la plataforma de desarrollo Sabertooth ESP32 S3, el cual esta a disposicion de IEEE photonics, pero si se requiriera la instalacion en otra plataforma, este programa es compatible con chips: ESP32 S3, C3, C2, C6, H2.
+* La opcion recomendable para implementar el sistema es en la plataforma de desarrollo Sabertooth ESP32 S3, el cual esta a disposicion del capitulo IEEE photonics, pero si se requiriera la instalacion en otra plataforma, este programa es compatible con chips: ESP32 S3, C3, C2, C6, H2.
 
 ![Plataforma de desarrollo Sabertooth ESP32 S3](misc/PCB.png)
 
@@ -35,6 +35,45 @@ Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 (To exit the serial monitor, type ``Ctrl-]``.)
 
 See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects. -->
+## Estado Inicial
+
+Para un correcto uso del dispositivo y para tener una optima calibracion se debe se ajustar manualmente las siguientes partes moviles del dispositivo:
+
+### Movil de corte
+
+Asegurarse mediante un caliper o vernier que la distancia entre la seja de la parte movil y el chasis del motor a pasos es de 8.6 mm, mirar la figura de a continuacion:
+
+![Posicion inicial del movil de corte](misc/DistanceCut.png)
+
+### Plataforma de estiramiento
+
+Asegurarse que el movil de estiramiento esta al tope del mecanismo, esto con ayuda del la perilla de ajuste, mirar la figura de a continuacion:
+
+![Posicion inicial del movil de estiramiento](misc/DistanceEst.png)
+
+## Alimentacion
+
+Asegurarse que la alimentacion se por medio del Jack de alimentacion, ademas de suministrar 9V DC con una corriente operativa de 3 ampers.
+
+<!-- ## Aplicacion de control
+
+### Seleccion de dispositivo:
+
+### Rutina de corte
+
+### Corte manual -->
+
+## Proteccion de tope
+
+Pese a que la aplicacion de control delimita la distancias de corte y estiramiento del dispositivo, es posible que sucedan algunos de los siguetes resultados:
+
+### Movil de corte choca con cilindro central
+
+Si la navaja de corte chocara con el cilindro de corte, es necesario que mediante la aplicacion se devuelva a su estado inicial o cero, posteriromente, se debe de mover manualmente a su posicion inicial de 8.6 mm, como se explica en la seccion de "Estado inicial".
+
+### Movil de estiramiento
+
+Si por alguna razon el movil de estiramiento llegara al limite, por cualquier situacion, el sistema se parara en cuanto llegue al tope, en esta situacion se debe de mover a la posicion inicial del movil de estirmaiento manualmente, posteriormente se debera de recalibrar el sistema.
 
 ## Troubleshooting
 
