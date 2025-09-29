@@ -7,7 +7,7 @@ Este programa permite que la placa personalizada sabertooth ESP32 S3, controle d
 
 El programa está diseñado para utilizar los dos núcleos del ESP32, uno encargado de correr las tareas del BLE, establecer conexiones, enviar-recibir características, etc. Mientras que el otro núcleo se encarga de operar los motores a paso, mediante dos drivers TCM2209 además de detectar finales de carrera para calcular la distancia y como medida de seguridad.
 
-A continuación, se presenta informacion importante del programa, además es posible verificar el manual [aquí.](tutorial/Gatt_Server_Service_Table_Example_Walkthrough.md)
+A continuación, se presenta informacion importante del programa, además es posible verificar el manual [aquí.](misc/DiagramaPlacaDeDesarrolloESP32.pdf)
 
 ### Hardware Permitido
 
