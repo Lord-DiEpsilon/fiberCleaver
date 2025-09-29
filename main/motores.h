@@ -1,4 +1,9 @@
 // motores.h
+
+// Proyecto de servicio social – Universidad de Guanajuato
+// Autores: Alejandro Orozco & Profesor Roberto Rojas Laguna
+// Licencia: CC BY-NC 4.0
+
 #ifndef MOTORES_H
 #define MOTORES_H
 

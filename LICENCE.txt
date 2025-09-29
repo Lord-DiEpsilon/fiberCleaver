@@ -1,0 +1,20 @@
+Copyright 2025 Alejandro Orozco & Profesor Roberto Rojas Laguna
+
+Este trabajo, incluyendo todos los archivos de diseño de PCB, esquemáticos y documentación asociada,
+est licenciado bajo la Licencia Creative Commons Atribución-NoComercial 4.0 Internacional (CC BY-NC 4.0).
+
+Esto significa que puedes:
+
+- Compartir — copiar y redistribuir el material en cualquier medio o formato.
+- Adaptar — remixar, transformar y crear a partir del material.
+
+Bajo las siguientes condiciones:
+
+1. **Atribución** — Debes dar crédito adecuado, proporcionar un enlace a la licencia e indicar si se han realizado cambios.
+   Puedes hacerlo de manera razonable, pero no de forma que sugiera que los licenciantes te respaldan a ti o tu uso.
+   
+2. **No Comercial** — No puedes utilizar el material para fines comerciales.
+
+Para ver una copia completa de la licencia, visita:
+https://creativecommons.org/licenses/by-nc/4.0/
+

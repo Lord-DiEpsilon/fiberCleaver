@@ -1,4 +1,9 @@
 // motores.c
+
+// Proyecto de servicio social – Universidad de Guanajuato
+// Autores: Alejandro Orozco & Profesor Roberto Rojas Laguna
+// Licencia: CC BY-NC 4.0
+
 #include "motores.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

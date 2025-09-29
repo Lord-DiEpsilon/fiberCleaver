@@ -1,3 +1,7 @@
+// Proyecto de servicio social – Universidad de Guanajuato
+// Autores: Alejandro Orozco & Profesor Roberto Rojas Laguna
+// Licencia: CC BY-NC 4.0
+
 // Archivo: cortadora_gatts.c
 
 #include "freertos/FreeRTOS.h"
@@ -13,7 +17,7 @@
 #include <string.h>
 #include "esp_bt_device.h"
 #include "motores.h"
-#include <math.h>   // importante para fabsf()
+#include <math.h>
 
 #define TAG "CORTADORA"
 #define DEVICE_NAME "Cortadora"
