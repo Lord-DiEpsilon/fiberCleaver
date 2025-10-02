@@ -15,6 +15,8 @@ A continuación, se presenta informacion importante del programa, además es pos
 
 ![Plataforma de desarrollo Sabertooth ESP32 S3](misc/PCB.png)
 
+![Plataforma de corte de precision Sabertooth](misc/FiberCleaver.png)
+
 ## Archivos
 
 Para lograr actualizar o anadir mas funcionalidades al sistema se debe de editar el archivo principal:
